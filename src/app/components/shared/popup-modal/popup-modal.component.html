@@ -18,10 +18,6 @@
   class="custom-popup-parent" [draggable]="true" [ngClass]='{"upload-width": popupId === "upload-popup"}'>
   <div class="subheader">{{subHeader}}</div>
 
-  <div *ngIf="popupId.includes('STREAM_')">
-    <canvas #videoCanvas width="640" height="480"></canvas>
-  </div>
-
   <div *ngIf="popupId.includes('IMAGE_')">
     <img #imageView width="640" height="480" alt="No Image">
   </div>
