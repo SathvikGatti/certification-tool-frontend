@@ -19,6 +19,7 @@ import { SharedAPI } from 'src/app/shared/core_apis/shared';
 import { DEFAULT_POPUP_OBJECT } from 'src/app/shared/utils/constants';
 import { DataService } from 'src/app/shared/web_sockets/ws-config';
 import { commaSeparatedHexToBase64 } from './image-utils';
+import { WebRTCService } from 'src/app/shared/core_apis/webrtc.service';
 
 @Component({
   selector: 'app-popup-modal',
@@ -34,9 +35,10 @@ export class PopupModalComponent implements AfterViewInit {
   @Input() messageId!: any;
   fileName: any = '';
   file?: File;
+  sessions? = this.webRTCService.sessions$;
   @ViewChild('imageView') imageRef!: ElementRef<HTMLImageElement>;
 
-  constructor(public sharedAPI: SharedAPI, private dataService: DataService) {
+  constructor(public sharedAPI: SharedAPI, private dataService: DataService, private webRTCService: WebRTCService) {
     this.fileName = '';
   }
 

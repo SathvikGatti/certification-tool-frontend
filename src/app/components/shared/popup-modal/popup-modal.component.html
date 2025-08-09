@@ -18,6 +18,17 @@
   class="custom-popup-parent" [draggable]="true" [ngClass]='{"upload-width": popupId === "upload-popup"}'>
   <div class="subheader">{{subHeader}}</div>
 
+  <div *ngIf="popupId.includes('STREAM_')">
+    <!-- Render WebRTC Video Streams -->
+    <div *ngFor="let session of (sessions$ | async) | keyvalue">
+      <video autoplay playsinline width="640" height="480" [streamSrc]="session.remoteStream$"></video>
+    </div>
+    <!-- Need to style this -->
+    <div class="state">
+      Peer Connection State: {{ session.connectionState$ | async }}
+    </div>
+  </div>
+
   <div *ngIf="popupId.includes('IMAGE_')">
     <img #imageView width="640" height="480" alt="No Image">
   </div>
