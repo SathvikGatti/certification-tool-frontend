@@ -57,6 +57,9 @@ export class PopupModalComponent implements OnInit, OnDestroy, AfterViewInit {
   streamSrc: string | null;
   streamContents: string[];
   currentStream: number | null;
+  // Error handling properties
+  errorMessage: string | null = null;
+  isLoading: boolean = false;
   private socket!: WebSocket | null;
   private ctx!: CanvasRenderingContext2D | null;
   private decoder!: VideoDecoder | null;
@@ -87,7 +90,7 @@ export class PopupModalComponent implements OnInit, OnDestroy, AfterViewInit {
       this.connectWebSocket();
     }
     if (this.popupId.includes('PUSH_')) {
-      this.testRunAPI.fetchPushAVStreamsList();
+      this.loadStreams();
     }
   }
 
@@ -118,32 +121,56 @@ export class PopupModalComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  loadStreams() {
+    this.isLoading = true;
+    this.errorMessage = null;
+    this.testRunAPI.fetchPushAVStreamsList();
+    
+    // Check if streams are available after a short delay
+    setTimeout(() => {
+      const streams = this.testRunAPI.getPushAVStreamsList();
+      if (!streams || streams.length === 0) {
+        this.errorMessage = 'No video streams available. Click "Refresh Streams" to check for new streams.';
+      }
+      this.isLoading = false;
+    }, 1000);
+  }
+
   updateStreamSrc(streamId: number) {
+    this.errorMessage = null;
+    this.isLoading = true;
+    
     const streams: { id: number, files: string[] }[] = this.testRunAPI.getPushAVStreamsList();
     const stream = streams.find(s => s.id === streamId);
     if (!stream) {
-      console.error(`Stream with id ${streamId} not found.`);
+      this.errorMessage = `Stream with ID ${streamId} not found.`;
+      this.isLoading = false;
       return;
     }
 
     this.streamContents = stream.files;
     const streamPath = this.pickEntryPoint(stream.files);
     if (!streamPath) {
-      console.error(`No manifest found (DASH MPD or HLS M3U8). Cannot play stream ${streamId}.`);
+      this.errorMessage = `No DASH MPD or HLS M3U8 manifest found for stream ${streamId}. Cannot view stream.`;
+      this.isLoading = false;
       return;
     }
 
     this.streamSrc = `${environment.testPushAVServerURL}streams/${streamId}/${streamPath}`;
-    this.player.load(this.streamSrc).catch((e: shaka.util.Error) => {
+    this.player.load(this.streamSrc).then(() => {
+      this.currentStream = streamId;
+      this.isLoading = false;
+    }).catch((e: shaka.util.Error) => {
       console.error(`Error loading stream: ${streamId}`, e);
+      this.errorMessage = `Failed to load stream ${streamId}. Error: ${e.message || 'Unknown error occurred'}`;
+      this.isLoading = false;
     });
-    this.currentStream = streamId;
   }
 
   refreshStreams() {
-    this.testRunAPI.fetchPushAVStreamsList();
     this.streamContents = [];
     this.currentStream = null;
+    this.loadStreams();
   }
 
 
